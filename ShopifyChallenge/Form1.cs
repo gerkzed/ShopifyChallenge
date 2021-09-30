@@ -1,64 +1,44 @@
 ﻿using System;
-using System.IO;
-using System.Text;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 
 namespace ShopifyChallenge
 {
-
     public partial class mainfrm : Form
-
     {
-
-
-        
         public string datadir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"PhotoRepository\");
-        
-        
         public Image image;
         public mainfrm()
         {
+            string folder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            Directory.CreateDirectory(datadir);
+            Directory.CreateDirectory(datadir + "pictures");
 
-                string folder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                Directory.CreateDirectory(datadir);
-                Directory.CreateDirectory(datadir + "pictures");
-                
+            if (File.Exists(datadir + "pics.txt"))
+            {
 
-                if (File.Exists(datadir + "pics.txt"))
+            }
+            else
+            {
+                // Create a new file     
+                using (FileStream fs = File.Create(datadir + "pics.txt"))
                 {
-
+                    Console.WriteLine("textfile created");
                 }
-
-                else
-                {
-
-                    // Create a new file     
-                    using (FileStream fs = File.Create(datadir + "pics.txt"))
-                    {
-                        Console.WriteLine("textfile created");
-                    }
-
-                }
-            
-
+            }
 
             InitializeComponent();
-
             BuildListView();
             FillListView();
             InitializePictureBox();
-            
+
         }
         private void BuildListView()
         {
-
             string[] pics2 = RefreshData();
 
             if (pics2.Length == 0)
@@ -68,31 +48,30 @@ namespace ShopifyChallenge
                     FirstPhoto();
                 }
             }
-                
-                
 
-                ColumnHeader header1, header2;
-                header1 = new ColumnHeader();
-                header2 = new ColumnHeader();
+            ColumnHeader header1, header2;
+            header1 = new ColumnHeader();
+            header2 = new ColumnHeader();
 
-                header1.Text = "File name";
-                header1.TextAlign = HorizontalAlignment.Left;
-                header1.Width = -1;
+            header1.Text = "File name";
+            header1.TextAlign = HorizontalAlignment.Left;
+            header1.Width = -1;
 
-                header2.TextAlign = HorizontalAlignment.Left;
-                header2.Text = "Location";
-                header2.Width = -1;
+            header2.TextAlign = HorizontalAlignment.Left;
+            header2.Text = "Location";
+            header2.Width = -1;
 
-                ListView1.Columns.Add(header1);
-                ListView1.Columns.Add(header2);
-                ListView1.View = View.Details;
-            }
-        
-        private string [] RefreshData()
+            ListView1.Columns.Add(header1);
+            ListView1.Columns.Add(header2);
+            ListView1.View = View.Details;
+        }
+
+        private string[] RefreshData()
         {
             string[] pics1 = File.ReadAllLines(datadir + "pics.txt");
             return pics1;
         }
+
         private void FillListView()
         {
             string[] pics2 = RefreshData();
@@ -110,7 +89,7 @@ namespace ShopifyChallenge
 
         private void InitializePictureBox()
         {
-           
+
             this.PictureBox1.TabStop = false;
             this.PictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
             this.PictureBox1.BorderStyle = BorderStyle.Fixed3D;
@@ -119,9 +98,15 @@ namespace ShopifyChallenge
 
         private void MoveImage(string dir, string name)
         {
+            try
+            {
+                File.Copy(dir, datadir + @"pictures\" + name, true);
+            }
+            catch (IOException)
+            {
+                Console.WriteLine("overwrite failed but thats ok");
 
-            File.Copy(dir, datadir + @"pictures\" + name, true);
-
+            }
         }
 
         private void ListView1_MouseDown(object sender, MouseEventArgs e)
@@ -131,29 +116,23 @@ namespace ShopifyChallenge
                 PictureBox1.Image = null;
                 image.Dispose();
             }
-
             try
             {
                 ListViewItem selection = ListView1.GetItemAt(e.X, e.Y);
                 if (selection != null)
                 {
                     image = Image.FromFile(selection.SubItems[1].Text);
-
                     PictureBox1.Image = image;
-
                 }
             }
             catch (ArgumentException ae)
             {
                 Console.WriteLine(ae.Message);
-
-
             }
         }
 
         private void ListView1_MouseClick(object sender, MouseEventArgs e)
         {
-            
             if (e.Button == MouseButtons.Right)
             {
                 ListViewItem item = ListView1.GetItemAt(e.X, e.Y);
@@ -164,7 +143,6 @@ namespace ShopifyChallenge
                 }
             }
         }
-
 
         private void FirstPhoto()
         {
@@ -178,23 +156,24 @@ namespace ShopifyChallenge
 
             if (openDialog.ShowDialog() == DialogResult.OK)
             {
+                string[] files = openDialog.FileNames;
+                string[] safenames = openDialog.SafeFileNames;
 
                 for (int i = 0; i < pics1.Length; i++)
                 {
-                    if (datadir + openDialog.SafeFileName == pics1[i])
+                    for (int j = 0; j < files.Length; i++)
                     {
-                        MessageBox.Show("This image is already in your repository.", "Duplicate Photo", MessageBoxButtons.OK);
-                        dup = true;
-                        break;
+                        if (datadir + @"pictures\" + safenames[j] == pics1[i])
+                        {
+                            MessageBox.Show("This image is already in your repository.", "Duplicate Photo", MessageBoxButtons.OK);
+                            dup = true;
+                            break;
+
+                        }
                     }
-
-
                 }
                 if (dup == false)
                 {
-                    string[] files = openDialog.FileNames;
-                    string[] safenames = openDialog.SafeFileNames;
-
                     for (int i = 0; i < files.Length; i++)
                     {
                         StreamWriter sw = new StreamWriter(datadir + "pics.txt", true);
@@ -221,25 +200,28 @@ namespace ShopifyChallenge
 
             if (openDialog.ShowDialog() == DialogResult.OK)
             {
+                string[] files = openDialog.FileNames;
+                string[] safenames = openDialog.SafeFileNames;
 
-                for (int i = 0; i < pics1.Length; i++)
+                for (int i = 0; i <= pics1.Length - 1; i++)
                 {
-                    if (datadir + openDialog.SafeFileName == pics1[i])
+                    for (int j = 0; j <= files.Length - 1; j++)
                     {
-                        MessageBox.Show("This image is already in your repository.", "Duplicate Photo", MessageBoxButtons.OK);
-                        dup = true;
-                        break;
+                        if (datadir + @"pictures\" + safenames[j] == pics1[i])
+                        {
+                            MessageBox.Show("This image is already in your repository.", "Duplicate Photo", MessageBoxButtons.OK);
+                            dup = true;
+                            break;
+                        }
+
                     }
-
-
                 }
 
                 if (dup == false)
                 {
-                    string[] files = openDialog.FileNames;
-                    string[] safenames = openDialog.SafeFileNames;
 
-                    for(int i = 0; i < files.Length; i++)
+
+                    for (int i = 0; i < files.Length; i++)
                     {
                         StreamWriter sw = new StreamWriter(datadir + "pics.txt", true);
 
@@ -254,7 +236,7 @@ namespace ShopifyChallenge
                         pics1 = RefreshData();
                     }
                 }
-                
+
 
             }
         }
@@ -266,15 +248,12 @@ namespace ShopifyChallenge
             string[] pics3 = RefreshData();
             if (MessageBox.Show("Are you sure you want to delete " + ListView1.FocusedItem.Text, "Confirm Delete", MessageBoxButtons.YesNo) == DialogResult.Yes)
             {
-
                 image.Dispose();
 
                 for (int i = 0; i < pics3.Length; i++)
                 {
-
                     if (ListView1.FocusedItem.SubItems[1].Text == pics3[i])
                     {
-
                         List<string> linesList = File.ReadAllLines(datadir + "pics.txt").ToList();
                         linesList.RemoveAt(i);
                         File.WriteAllLines((datadir + "pics.txt"), linesList.ToArray());
@@ -285,7 +264,6 @@ namespace ShopifyChallenge
 
                         if (File.Exists(pics3[i]))
                         {
-
                             try
                             {
                                 PictureBox1.Image = null;
@@ -307,8 +285,6 @@ namespace ShopifyChallenge
             {
 
             }
-
-
         }
 
         private void viewFullsizeToolStripMenuItem_Click(object sender, EventArgs e)
